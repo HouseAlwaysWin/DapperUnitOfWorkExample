@@ -1,0 +1,42 @@
+version: "3.8"
+services:
+  mssqldb:
+    build:
+      context: .
+      dockerfile: Dockerfile.mssql
+    # image: "mcr.microsoft.com/mssql/server"
+    container_name: mssqldb
+    ports:
+      - "1500:1433"
+    environment:
+      SA_PASSWORD: "Your_password123"
+      ACCEPT_EULA: "Y"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 1500M
+        reservations:
+          memory: 1000M
+  webapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.webapi
+    container_name: webapi
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mssqldb
+    volumes:
+      - ".:/app/"
+      - D:/Users/.aspnet/https/:/https:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS="https://+;http://+"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 400M
+        reservations:
+          memory: 200M

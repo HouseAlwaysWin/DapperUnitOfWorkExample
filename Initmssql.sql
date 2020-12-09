@@ -1,0 +1,9 @@
+CREATE DATABASE DapperUnitOfWorkDB
+GO
+USE DapperUnitOfWorkDB
+CREATE TABLE Product
+(
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    Name VARCHAR(50) NOT NULL
+)
+GO

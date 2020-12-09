@@ -1,0 +1,10 @@
+# To Create Database
+FROM mcr.microsoft.com/mssql/server
+
+COPY ./Initmssql.sql /db/Initmssql.sql
+
+WORKDIR /db
+
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=10 \
+    CMD /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Your_password123 -i Initmssql.sql || exit 1
