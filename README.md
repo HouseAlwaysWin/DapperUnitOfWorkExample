@@ -12,7 +12,7 @@ just under the root of project and run command:
 docker-compose --compatibility up --build
 ```
 
-After command you will build up the docker image with sqlserver and web api, you can just run the console example in debug mode
+After the command you will build up the docker image with sqlserver and web api, you can just run the console example in debug mode
 
 just to remove comment from .vscode/launch.json 
 
