@@ -1,4 +1,4 @@
-# DapperUnitOfWorkExample
+# Dapper with Unit Of Work Example
 
 ## What is this project for:
 
