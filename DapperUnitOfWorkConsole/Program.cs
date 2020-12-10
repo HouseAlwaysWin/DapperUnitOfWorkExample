@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using DapperUnitOfWorkLib.Entities;
 using DapperUnitOfWorkLib.Interface;
 using DapperUnitOfWorkLib.Interfaces;
@@ -9,7 +10,7 @@ namespace DapperUnitOfWorkConsole
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             string connectionString = "Server=localhost,1500;Database=DapperUnitOfWorkDB;user id=SA;password=Your_password123;Integrated Security=false";
             IUnitOfWork uow = new UnitOfWork<SqlConnection>(connectionString);
@@ -19,23 +20,25 @@ namespace DapperUnitOfWorkConsole
             };
 
             uow.BeginTrans();
-            // for (int i = 0; i < 100; i++)
-            // {
-            //  product = new Product{
-            //     Id=i,
-            //     Name = $"test{i}"
-            //  };   
-            //   productRepo.Insert(product);
-            // }
+            for (int i = 0; i < 100; i++)
+            {
+              product = new Product{
+                   Id=i,
+                   Name = $"test{i}"
+              };   
+              productRepo.Insert(product);
+            }
+
             int total = 0;
-            var products = productRepo.GetPaginated(ref total,2,10);
+            var products = productRepo.GetPaginated(ref total,1,10);
+
+            await productRepo.InsertAsync(product);
+            
+
+            var productsAsync = await productRepo.GetPaginatedAsync(1,10);
 
             uow.Commit();
-
-            foreach (var item in products)
-            {
-               System.Console.WriteLine(item.Name); 
-            }
         }
+
     }
 }

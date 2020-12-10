@@ -4,6 +4,10 @@
     <ProjectReference Include="..\DapperUnitOfWorkLib\DapperUnitOfWorkLib.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="2.1.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
