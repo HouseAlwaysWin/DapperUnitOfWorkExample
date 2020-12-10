@@ -11,6 +11,7 @@ namespace DapperUnitOfWorkLib.Interface
         T Get(object id);
         IEnumerable<T> GetAll();
         IEnumerable<T> GetPaginated(ref int total, int currentPage, int itemsPerPage);
+        Task<(IEnumerable<T> list,int total)> GetPaginatedAsync(int currentPage, int itemsPerPage);
         Task<T> GetTaskAsync(object id);
         void Insert(T model);
         Task InsertAsync(T model);

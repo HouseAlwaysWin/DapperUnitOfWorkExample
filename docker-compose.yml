@@ -4,7 +4,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.mssql
-    # image: "mcr.microsoft.com/mssql/server"
     container_name: mssqldb
     ports:
       - "1500:1433"
@@ -29,7 +28,6 @@ services:
       - mssqldb
     volumes:
       - ".:/app/"
-      - D:/Users/.aspnet/https/:/https:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS="https://+;http://+"

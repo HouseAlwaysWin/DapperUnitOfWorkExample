@@ -26,46 +26,42 @@ namespace DapperUnitOfWorkLib.Repositories
 
 
         #region SqlCmd String
-        private interface ISqlCommand
+        /// <summary>
+        /// Default is sqlserver
+        /// </summary>
+        private class SqlCommand
         {
-            string GetProducts();
+            public virtual string GetProducts(){
+                return @"SELECT * FROM Product";
+            }
         }
 
-        private class SqlServerCmd : ISqlCommand
+        private class PostgreCmd : SqlCommand
         {
-            public string GetProducts()
+            public override string GetProducts()
+            {
+                return @"";
+            }
+        }
+        private class MySqlCmd : SqlCommand
+        {
+            public override string GetProducts()
             {
                 return @"";
             }
         }
 
-        private class PostgreCmd : ISqlCommand
+        private readonly Dictionary<string, SqlCommand> CmdDict = new Dictionary<string, SqlCommand>
         {
-            public string GetProducts()
-            {
-                return @"";
-            }
-        }
-        private class MySqlCmd : ISqlCommand
-        {
-            public string GetProducts()
-            {
-                return @"";
-            }
-        }
-
-        private readonly Dictionary<string, ISqlCommand> CmdDict = new Dictionary<string, ISqlCommand>
-        {
-            ["sqlconnection"] = new SqlServerCmd(),
+            ["sqlconnection"] = new SqlCommand(),
             ["npgsqlconnection"] = new PostgreCmd(),
             ["mysqlconnection"] = new MySqlCmd(),
         };
-        private readonly ISqlCommand DefaultAdapter = new SqlServerCmd();
 
-        private ISqlCommand GetSqlCommand()
+        private SqlCommand GetSqlCommand()
         {
             var name = typeof(DbType).FullName.ToLower();
-            return CmdDict.TryGetValue(name, out var cmd) ? cmd : DefaultAdapter;
+            return CmdDict.TryGetValue(name, out var cmd) ? cmd : new SqlCommand();
         }
 
         #endregion

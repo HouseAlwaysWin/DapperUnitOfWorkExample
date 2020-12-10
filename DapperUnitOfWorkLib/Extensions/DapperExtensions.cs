@@ -4,12 +4,16 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Dapper;
 using Dapper.Contrib.Extensions;
 using static Dapper.Contrib.Extensions.SqlMapperExtensions;
 
 namespace DapperUnitOfWorkLib.Extensions {
 
+    /// <summary>
+    /// Add Paginated method , most of code copy form dapper contrib
+    /// </summary>
     public static class DapperExtensions {
 
         private static readonly Dictionary<string, ISqlCommand> CmdDict = new Dictionary<string, ISqlCommand> {
@@ -52,16 +56,7 @@ namespace DapperUnitOfWorkLib.Extensions {
             }
         }
 
-        [AttributeUsage (AttributeTargets.Property)]
-        private class OrderByAttribute : Attribute {
-            public OrderByAttribute (bool isDesc = false) {
-                IsDesc = isDesc;
-            }
-            /// <summary>
-            /// Whether an order is IsDesc
-            /// </summary>
-            public bool IsDesc { get; }
-        }
+
 
         private static ISqlCommand GetSqlCommand (IDbConnection connection) {
 
@@ -182,10 +177,9 @@ namespace DapperUnitOfWorkLib.Extensions {
         }
 
         /// <summary>
-        /// Returns a list of entities from table "Ts".
+        /// Returns a paging list of entities from table "T".
         /// Id of T must be marked with [Key] attribute.
-        /// Entities created from interfaces are tracked/intercepted for changes and used by the Update() extension
-        /// for optimal performance.
+        /// T must have an Order attribute
         /// </summary>
         /// <typeparam name="T">Interface or type to create and populate</typeparam>
         /// <param name="connection">Open SqlConnection</param>
@@ -240,6 +234,69 @@ namespace DapperUnitOfWorkLib.Extensions {
                 list.Add (obj);
             }
             return list;
+        }
+
+
+        /// <summary>
+        /// Async returns a paging list of entities from table "T".
+        /// Id of T must be marked with [Key] attribute.
+        /// T must have an Order attribute
+        /// </summary>
+        /// <typeparam name="T">Interface or type to create and populate</typeparam>
+        /// <param name="connection">Open SqlConnection</param>
+        /// <param name="transaction">The transaction to run under, null (the default) if none</param>
+        /// <param name="commandTimeout">Number of seconds before command execution timeout</param>
+        /// <returns>Entity of T</returns>
+        public static async Task<(IEnumerable<T> list,int total)> GetPaginatedAsync<T> (this IDbConnection connection, int currentPage, int itemsPerPage, IDbTransaction transaction = null, int? commandTimeout = null) where T : class {
+            var type = typeof (T);
+            var cacheName = nameof (T) + nameof (GetPaginated);
+            var countCache = nameof (GetPaginated);
+
+            if (!GetQueries.TryGetValue (cacheName, out string sql)) {
+                GetSingleKey<T> (nameof (GetPaginated));
+                var name = GetTableName (type);
+                var orderByProp = OrderByPropertiesCache (type).FirstOrDefault ();
+                var isDesc = IsOrderByDesc (orderByProp);
+
+                sql = GetSqlCommand (connection).GetPaginated (name, orderByProp.Name, currentPage, itemsPerPage, isDesc);
+                GetQueries[cacheName] = sql;
+            }
+
+            if (!GetQueries.TryGetValue (countCache, out string sqlTotal)) {
+                GetSingleKey<T> (nameof (GetPaginated));
+                var name = GetTableName (type);
+                var orderByProp = OrderByPropertiesCache (type).FirstOrDefault ();
+                var isDesc = IsOrderByDesc (orderByProp);
+
+                sqlTotal = "SELECT COUNT(*) FROM " + name;
+                GetQueries[countCache] = sqlTotal;
+            }
+
+            int total = await connection.QueryFirstAsync<int> (sqlTotal, null, transaction, commandTimeout : commandTimeout);
+            IEnumerable<T> result = null;
+            if (!type.IsInterface) {
+                result = await connection.QueryAsync<T> (sql, new { Page = currentPage, ItemsPerPage = itemsPerPage, }, transaction, commandTimeout : commandTimeout);
+                return (result,total);
+            }
+
+            result = await connection.QueryAsync<T> (sql, new { Page = currentPage, ItemsPerPage = itemsPerPage, }, transaction, commandTimeout : commandTimeout);
+            var list = new List<T> ();
+            foreach (IDictionary<string, object> res in result) {
+                var obj = ProxyGenerator.GetInterfaceProxy<T> ();
+                foreach (var property in TypePropertiesCache (type)) {
+                    var val = res[property.Name];
+                    if (val == null) continue;
+                    if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition () == typeof (Nullable<>)) {
+                        var genericType = Nullable.GetUnderlyingType (property.PropertyType);
+                        if (genericType != null) property.SetValue (obj, Convert.ChangeType (val, genericType), null);
+                    } else {
+                        property.SetValue (obj, Convert.ChangeType (val, property.PropertyType), null);
+                    }
+                }
+                ((IProxy) obj).IsDirty = false; //reset change tracking and return
+                list.Add (obj);
+            }
+            return (list,total);
         }
     }
 }

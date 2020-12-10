@@ -15,12 +15,27 @@ namespace DapperUnitOfWorkConsole
             IUnitOfWork uow = new UnitOfWork<SqlConnection>(connectionString);
             IProductRepository productRepo = new ProductRepository<SqlConnection>(uow);
             Product product = new Product{
-                Name = "test1"
+                Name = "test2"
             };
 
             uow.BeginTrans();
-            productRepo.Insert(product);
+            // for (int i = 0; i < 100; i++)
+            // {
+            //  product = new Product{
+            //     Id=i,
+            //     Name = $"test{i}"
+            //  };   
+            //   productRepo.Insert(product);
+            // }
+            int total = 0;
+            var products = productRepo.GetPaginated(ref total,2,10);
+
             uow.Commit();
+
+            foreach (var item in products)
+            {
+               System.Console.WriteLine(item.Name); 
+            }
         }
     }
 }

@@ -20,6 +20,11 @@ namespace DapperUnitOfWorkLib.Repositories
             return _uow.Connection.GetPaginated<T>(ref total, currentPage, itemsPerPage, _uow.Transaction);
         }
 
+        public async Task<(IEnumerable<T> list,int total)> GetPaginatedAsync(int currentPage, int itemsPerPage)
+        {
+            return  await _uow.Connection.GetPaginatedAsync<T>(currentPage, itemsPerPage, _uow.Transaction);
+        }
+
         public IEnumerable<T> GetAll()
         {
             return _uow.Connection.GetAll<T>(_uow.Transaction);
