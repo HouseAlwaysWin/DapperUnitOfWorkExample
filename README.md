@@ -25,11 +25,11 @@ just to remove comment from .vscode/launch.json
       "name": ".NET Core Launch (console)",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build"
+      "preLaunchTask": "build",
       "program": "${workspaceFolder}/DapperUnitOfWorkConsole/bin/Debug/netcoreapp3.1/DapperUnitOfWorkConsole.dll",
       "args": [],
-      "cwd": "${workspaceFolder}/DapperUnitOfWorkConsole"
-      "console": "internalConsole",
+      "cwd": "${workspaceFolder}/DapperUnitOfWorkConsole",
+      "console":"internalConsole",
       "stopAtEntry": false
     },
 ```
@@ -45,16 +45,10 @@ if you don't want to run web api with docker you can just stop it from docker an
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      // If you have changed target frameworks, make sure to update the program path.
       "program": "${workspaceFolder}/DapperUnitOfWorkWebApi/bin/Debug/netcoreapp3.1/DapperUnitOfWorkWebApi.dll",
       "args": [],
       "cwd": "${workspaceFolder}/DapperUnitOfWorkWebApi",
       "stopAtEntry": false,
-      // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
-      // "serverReadyAction": {
-      //     "action": "openExternally",
-      //     "pattern": "^\\s*Now listening on:\\s+(https?://\\S+)"
-      // },
       "env": {
           "ASPNETCORE_ENVIRONMENT": "Development"
       },
@@ -85,7 +79,6 @@ modified launch.json:
        "pipeCwd": "${workspaceRoot}",
        "quoteArgs": false
    },
-   // To map current project with docker container, {"container path":"your project path"}
    "sourceFileMap": {
        "/app": "${workspaceRoot}"
    },
