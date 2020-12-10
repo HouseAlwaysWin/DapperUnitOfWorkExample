@@ -2,7 +2,8 @@
 
 ## What is this project for:
 
-This is just a Example for Repository and Unit Of Work pattern with Dapper
+This is just a Example for Repository and Unit Of Work pattern with Dapper.
+And it's build up with .Net Core 3.1 And .net standard 2.1
 
 ## How to use it
 
