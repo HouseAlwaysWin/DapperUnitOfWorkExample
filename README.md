@@ -6,6 +6,8 @@ This is just a Example for Repository and Unit Of Work pattern with Dapper
 
 ## How to use it
 
+Before you start it, you have to install docker otherwise you have to build it up DB and modified connection string with your own self.
+
 just under the root of project and run command:
 
 ```
