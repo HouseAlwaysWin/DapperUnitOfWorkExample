@@ -9,6 +9,18 @@ namespace DapperUnitOfWorkLib.Repositories
 {
     
 
+    public  class ProductRepository : GenericRepository<Product>, IProductRepository{
+        public ProductRepository(IUnitOfWork uow) : base(uow)
+        {
+        }
+
+        public IEnumerable<Product> GetProducts(int num = 1000)
+        {
+            throw new System.NotImplementedException();
+        }
+
+    }
+
     public class ProductRepository<DbType> : GenericRepository<Product>, IProductRepository where DbType : IDbConnection, new()
     {
         private readonly IUnitOfWork _uow;

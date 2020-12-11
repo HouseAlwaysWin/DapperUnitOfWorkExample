@@ -5,9 +5,11 @@ using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Data.SqlClient;
 using Dapper;
 using Dapper.Contrib.Extensions;
 using static Dapper.Contrib.Extensions.SqlMapperExtensions;
+using System.ComponentModel;
 
 namespace DapperUnitOfWorkLib.Extensions {
 
@@ -16,10 +18,10 @@ namespace DapperUnitOfWorkLib.Extensions {
     /// </summary>
     public static class DapperExtensions {
 
-        private static readonly Dictionary<string, ISqlCommand> CmdDict = new Dictionary<string, ISqlCommand> {
-            ["sqlconnection"] = new SqlServerCmd (),
-            ["npgsqlconnection"] = new PostgresCmd (),
-            ["mysqlconnection"] = new MySqlCmd (),
+        private static readonly Dictionary<string, IDatabaseConnType> CmdDict = new Dictionary<string, IDatabaseConnType> {
+            ["sqlconnection"] = new SqlServerDB (),
+            ["npgsqlconnection"] = new PostgresDB (),
+            ["mysqlconnection"] = new MySqlDB (),
         };
 
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> KeyProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ();
@@ -29,41 +31,71 @@ namespace DapperUnitOfWorkLib.Extensions {
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> WhereProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ();
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> OrderByProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ();
 
+        private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ColumnByProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>>();
+
         private static readonly ConcurrentDictionary<string, string> GetQueries = new ConcurrentDictionary<string, string> ();
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, string> TypeTableName = new ConcurrentDictionary<RuntimeTypeHandle, string> ();
-        private static readonly ISqlCommand DefaultCmd = new SqlServerCmd ();
+        private static readonly IDatabaseConnType DefaultDB = new SqlServerDB ();
 
-        private interface ISqlCommand {
+        private interface IDatabaseConnType {
             string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc);
+            void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data,IDbTransaction transaction=null, int batchSize = 0, int bulkCopyTimeout = 30);
         }
 
-        private class SqlServerCmd : ISqlCommand {
+        private class SqlServerDB : IDatabaseConnType {
+            public void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
+            {
+                var type = typeof (T);
+                var tableName = GetTableName(type);
+                using (var bulkCopy = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.Default, (SqlTransaction)transaction))
+                {
+                    bulkCopy.BulkCopyTimeout = bulkCopyTimeout;
+                    bulkCopy.BatchSize = batchSize;
+                    bulkCopy.DestinationTableName = tableName;
+                    bulkCopy.WriteToServer(ToDataTable<T>(data));
+                }
+            }
+
             public string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc) {
                 string desc = isDesc ? "DESC" : "ASC";
                 int totalItems = (currentPage - 1) * itemsPerPage;
                 return $"SELECT * FROM {tableName} ORDER BY {orderBy} {desc} OFFSET {totalItems} ROWS FETCH NEXT {itemsPerPage} ROWS ONLY ";
             }
         }
-        private class PostgresCmd : ISqlCommand {
+        private class PostgresDB : IDatabaseConnType {
+            public void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
+            {
+                throw new NotSupportedException();
+            }
+
             public string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc) {
-                throw new NotImplementedException ();
+                string desc = isDesc ? "DESC" : "ASC";
+                int totalItems = (currentPage - 1) * itemsPerPage;
+                return $"SELECT * FROM {tableName} ORDER BY {orderBy} {desc} OFFSET {totalItems} LIMIT {itemsPerPage}";
             }
         }
 
-        private class MySqlCmd : ISqlCommand {
+        private class MySqlDB : IDatabaseConnType {
+            public void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
+            {
+                throw new NotSupportedException();
+            }
+
             public string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc) {
-                throw new NotImplementedException ();
+                string desc = isDesc ? "DESC" : "ASC";
+                int totalItems = (currentPage - 1) * itemsPerPage;
+                return $"SELECT * FROM {tableName} ORDER BY {orderBy} {desc} OFFSET {totalItems} LIMIT {itemsPerPage}";
             }
         }
 
 
 
-        private static ISqlCommand GetSqlCommand (IDbConnection connection) {
+        private static IDatabaseConnType GetDatabaseConnType (IDbConnection connection) {
 
             var name = GetDatabaseType?.Invoke (connection).ToLower () ??
                 connection.GetType ().Name.ToLower ();
 
-            return CmdDict.TryGetValue (name, out var cmd) ? cmd : DefaultCmd;
+            return CmdDict.TryGetValue (name, out var cmd) ? cmd : DefaultDB;
         }
 
         private static bool IsWriteable (PropertyInfo pi) {
@@ -126,6 +158,31 @@ namespace DapperUnitOfWorkLib.Extensions {
             return orderByProperties;
         }
 
+        private static List<PropertyInfo> ColumnPropertiesCache (Type type) {
+            if (ColumnByProperties.TryGetValue (type.TypeHandle, out IEnumerable<PropertyInfo> col)) {
+                return col.ToList ();
+            }
+
+            var allProperties = TypePropertiesCache (type);
+            var columnProperties = allProperties.Where (p => p.GetCustomAttributes (true).Any (a => a is ColumnAttribute)).ToList ();
+
+            ColumnByProperties[type.TypeHandle] = columnProperties;
+            return columnProperties;
+        }
+
+        private static List<PropertyInfo> ComputedPropertiesCache(Type type)
+        {
+            if (ComputedProperties.TryGetValue(type.TypeHandle, out var cachedProps))
+            {
+                return cachedProps.ToList();
+            }
+
+            var computedProperties = TypePropertiesCache(type).Where(p => p.GetCustomAttributes(true).Any(a => a.GetType().Name == "ComputedAttribute")).ToList();
+            ComputedProperties[type.TypeHandle] = computedProperties;
+            return computedProperties;
+        }
+
+      
         private static bool IsOrderByDesc (PropertyInfo pi) {
             var attributes = pi.GetCustomAttributes (typeof (OrderByAttribute), false).AsList ();
             if (attributes.Count != 1) return true;
@@ -176,6 +233,39 @@ namespace DapperUnitOfWorkLib.Extensions {
             return name;
         }
 
+
+
+        /// <summary>
+        /// Transfer data to datatable for bulkInsert
+        /// </summary>
+        /// <param name="data">Insert Data</param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static DataTable ToDataTable<T>(this IEnumerable<T> data)
+        {
+            PropertyDescriptorCollection properties =
+                TypeDescriptor.GetProperties(typeof(T));
+            DataTable table = new DataTable();
+            foreach (PropertyDescriptor prop in properties){
+                var attr = prop.Attributes.OfType<ColumnAttribute>().FirstOrDefault();
+                // check if property has columnName attribute then replace the name
+                string columnName = (attr!=null)? attr.Name:prop.Name;
+                table.Columns.Add(columnName, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
+            }
+            foreach (T item in data)
+            {
+                DataRow row = table.NewRow();
+                foreach (PropertyDescriptor prop in properties){
+                    var attr = prop.Attributes.OfType<ColumnAttribute>().FirstOrDefault();
+                    // check if property has columnName attribute then replace the name
+                    string columnName = (attr!=null)? attr.Name:prop.Name;
+                    row[columnName] = prop.GetValue(item) ?? DBNull.Value;
+                }
+                table.Rows.Add(row);
+            }
+            return table;
+        }
+
         /// <summary>
         /// Returns a paging list of entities from table "T".
         /// Id of T must be marked with [Key] attribute.
@@ -197,7 +287,7 @@ namespace DapperUnitOfWorkLib.Extensions {
                 var orderByProp = OrderByPropertiesCache (type).FirstOrDefault ();
                 var isDesc = IsOrderByDesc (orderByProp);
 
-                sql = GetSqlCommand (connection).GetPaginated (name, orderByProp.Name, currentPage, itemsPerPage, isDesc);
+                sql = GetDatabaseConnType (connection).GetPaginated (name, orderByProp.Name, currentPage, itemsPerPage, isDesc);
                 GetQueries[cacheName] = sql;
             }
 
@@ -248,6 +338,7 @@ namespace DapperUnitOfWorkLib.Extensions {
         /// <param name="commandTimeout">Number of seconds before command execution timeout</param>
         /// <returns>Entity of T</returns>
         public static async Task<(IEnumerable<T> list,int total)> GetPaginatedAsync<T> (this IDbConnection connection, int currentPage, int itemsPerPage, IDbTransaction transaction = null, int? commandTimeout = null) where T : class {
+
             var type = typeof (T);
             var cacheName = nameof (T) + nameof (GetPaginated);
             var countCache = nameof (GetPaginated);
@@ -258,7 +349,7 @@ namespace DapperUnitOfWorkLib.Extensions {
                 var orderByProp = OrderByPropertiesCache (type).FirstOrDefault ();
                 var isDesc = IsOrderByDesc (orderByProp);
 
-                sql = GetSqlCommand (connection).GetPaginated (name, orderByProp.Name, currentPage, itemsPerPage, isDesc);
+                sql = GetDatabaseConnType (connection).GetPaginated (name, orderByProp.Name, currentPage, itemsPerPage, isDesc);
                 GetQueries[cacheName] = sql;
             }
 
@@ -298,5 +389,21 @@ namespace DapperUnitOfWorkLib.Extensions {
             }
             return (list,total);
         }
+
+
+        /// <summary>
+        /// Bulk Insert
+        /// </summary>
+        /// <param name="connection">Open SqlConnection</param>
+        /// <param name="data">Insert data</param>
+        /// <param name="transaction">The transaction to run under, null (the default) if none</param>
+        /// <param name="batchSize">number of once bulk insert </param>
+        /// <param name="bulkCopyTimeout">time out</param>
+        /// <typeparam name="T"></typeparam>
+        public static void BulkInsert<T>(this IDbConnection connection,IEnumerable<T> data,IDbTransaction transaction=null, int batchSize = 0, int bulkCopyTimeout = 30){
+            var dbType = GetDatabaseConnType(connection);
+            dbType.BulkInsert<T>(connection,data,transaction,batchSize,bulkCopyTimeout);
+        }
+   
     }
 }
