@@ -18,10 +18,10 @@ namespace DapperUnitOfWorkLib.Extensions {
     /// </summary>
     public static class DapperExtensions {
 
-        private static readonly Dictionary<string, IDatabaseConnType> CmdDict = new Dictionary<string, IDatabaseConnType> {
-            ["sqlconnection"] = new SqlServerDB (),
-            ["npgsqlconnection"] = new PostgresDB (),
-            ["mysqlconnection"] = new MySqlDB (),
+        private static readonly Dictionary<string, IDatabaseAdapter> CmdDict = new Dictionary<string, IDatabaseAdapter> {
+            ["sqlconnection"] = new SqlServerAdapter (),
+            ["npgsqlconnection"] = new PostgresAdapter (),
+            ["mysqlconnection"] = new MySqlAdapter (),
         };
 
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> KeyProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ();
@@ -30,19 +30,18 @@ namespace DapperUnitOfWorkLib.Extensions {
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ComputedProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ();
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> WhereProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ();
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> OrderByProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ();
-
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>> ColumnByProperties = new ConcurrentDictionary<RuntimeTypeHandle, IEnumerable<PropertyInfo>>();
 
         private static readonly ConcurrentDictionary<string, string> GetQueries = new ConcurrentDictionary<string, string> ();
         private static readonly ConcurrentDictionary<RuntimeTypeHandle, string> TypeTableName = new ConcurrentDictionary<RuntimeTypeHandle, string> ();
-        private static readonly IDatabaseConnType DefaultDB = new SqlServerDB ();
+        private static readonly IDatabaseAdapter DefaultDB = new SqlServerAdapter ();
 
-        private interface IDatabaseConnType {
+        private interface IDatabaseAdapter {
             string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc);
             void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data,IDbTransaction transaction=null, int batchSize = 0, int bulkCopyTimeout = 30);
         }
 
-        private class SqlServerDB : IDatabaseConnType {
+        private class SqlServerAdapter : IDatabaseAdapter {
             public void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
             {
                 var type = typeof (T);
@@ -62,7 +61,19 @@ namespace DapperUnitOfWorkLib.Extensions {
                 return $"SELECT * FROM {tableName} ORDER BY {orderBy} {desc} OFFSET {totalItems} ROWS FETCH NEXT {itemsPerPage} ROWS ONLY ";
             }
         }
-        private class PostgresDB : IDatabaseConnType {
+        private class PostgresAdapter : IDatabaseAdapter {
+            public void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
+            {
+                throw new NotSupportedException();
+            }
+
+            public string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc) {
+                string desc = isDesc ? "DESC" : "ASC";
+                int totalItems = (currentPage - 1) * itemsPerPage;
+                return $"SELECT * FROM {tableName} ORDER BY {orderBy} {desc} OFFSET {totalItems} LIMIT {itemsPerPage}";
+            }
+        }
+        private class MySqlAdapter : IDatabaseAdapter {
             public void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
             {
                 throw new NotSupportedException();
@@ -75,22 +86,9 @@ namespace DapperUnitOfWorkLib.Extensions {
             }
         }
 
-        private class MySqlDB : IDatabaseConnType {
-            public void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
-            {
-                throw new NotSupportedException();
-            }
-
-            public string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc) {
-                string desc = isDesc ? "DESC" : "ASC";
-                int totalItems = (currentPage - 1) * itemsPerPage;
-                return $"SELECT * FROM {tableName} ORDER BY {orderBy} {desc} OFFSET {totalItems} LIMIT {itemsPerPage}";
-            }
-        }
 
 
-
-        private static IDatabaseConnType GetDatabaseConnType (IDbConnection connection) {
+        private static IDatabaseAdapter GetDatabaseConnType (IDbConnection connection) {
 
             var name = GetDatabaseType?.Invoke (connection).ToLower () ??
                 connection.GetType ().Name.ToLower ();
@@ -169,19 +167,6 @@ namespace DapperUnitOfWorkLib.Extensions {
             ColumnByProperties[type.TypeHandle] = columnProperties;
             return columnProperties;
         }
-
-        private static List<PropertyInfo> ComputedPropertiesCache(Type type)
-        {
-            if (ComputedProperties.TryGetValue(type.TypeHandle, out var cachedProps))
-            {
-                return cachedProps.ToList();
-            }
-
-            var computedProperties = TypePropertiesCache(type).Where(p => p.GetCustomAttributes(true).Any(a => a.GetType().Name == "ComputedAttribute")).ToList();
-            ComputedProperties[type.TypeHandle] = computedProperties;
-            return computedProperties;
-        }
-
       
         private static bool IsOrderByDesc (PropertyInfo pi) {
             var attributes = pi.GetCustomAttributes (typeof (OrderByAttribute), false).AsList ();
