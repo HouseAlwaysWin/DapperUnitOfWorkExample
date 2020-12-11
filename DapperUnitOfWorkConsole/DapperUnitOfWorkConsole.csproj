@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DapperUnitOfWorkLib\DapperUnitOfWorkLib.csproj" />
+    <ProjectReference Include="..\DapperUnitOfWork.Repo\DapperUnitOfWork.Repo.csproj" />
   </ItemGroup>
 
   <ItemGroup>

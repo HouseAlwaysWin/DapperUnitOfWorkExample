@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
-using DapperUnitOfWorkLib.Entities;
+using DapperUnitOfWork.Repo;
+using DapperUnitOfWork.Repo.Entities;
 using DapperUnitOfWorkLib.Interface;
-using DapperUnitOfWorkLib.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DapperUnitOfWorkWebApi.Controllers

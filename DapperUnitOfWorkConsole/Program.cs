@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DapperUnitOfWorkLib.Entities;
+using DapperUnitOfWork.Repo;
+using DapperUnitOfWork.Repo.Entities;
 using DapperUnitOfWorkLib.Interface;
-using DapperUnitOfWorkLib.Interfaces;
 using DapperUnitOfWorkLib.Repositories;
 using Microsoft.Data.SqlClient;
 
@@ -13,8 +13,8 @@ namespace DapperUnitOfWorkConsole
         static async Task Main(string[] args)
         {
             string connectionString = "Server=localhost,1500;Database=DapperUnitOfWorkDB;user id=SA;password=Your_password123;Integrated Security=false";
-            IUnitOfWork uow = new UnitOfWork<SqlConnection>(connectionString);
-            IProductRepository productRepo = new ProductRepository<SqlConnection>(uow);
+            IUnitOfWork uow = new UnitOfWork(connectionString);
+            IProductRepository productRepo = new ProductRepository(uow);
             Product product = new Product{
                 Name = "test2"
             };

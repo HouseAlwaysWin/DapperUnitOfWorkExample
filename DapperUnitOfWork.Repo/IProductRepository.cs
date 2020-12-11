@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using DapperUnitOfWorkLib.Entities;
 using DapperUnitOfWorkLib.Interface;
+using DapperUnitOfWork.Repo.Entities;
 
-namespace DapperUnitOfWorkLib.Interfaces
+namespace DapperUnitOfWork.Repo
 {
    public interface IProductRepository:IGenericRepository<Product>
     {

@@ -1,9 +1,17 @@
 ﻿using System;
 using System.Data;
+using System.Data.SqlClient;
 using DapperUnitOfWorkLib.Interface;
 
 namespace DapperUnitOfWorkLib.Repositories
 {
+
+    public class UnitOfWork : UnitOfWork<SqlConnection>
+    {
+        public UnitOfWork(string connectionString) : base(connectionString)
+        {
+        }
+    }
 
     public class UnitOfWork<T> : IUnitOfWork where T : IDbConnection, new () {
 

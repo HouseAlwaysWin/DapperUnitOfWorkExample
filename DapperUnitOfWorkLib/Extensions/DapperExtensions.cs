@@ -241,7 +241,7 @@ namespace DapperUnitOfWorkLib.Extensions {
         /// <param name="data">Insert Data</param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static DataTable ToDataTable<T>(this IEnumerable<T> data)
+        private static DataTable ToDataTable<T>(this IEnumerable<T> data)
         {
             PropertyDescriptorCollection properties =
                 TypeDescriptor.GetProperties(typeof(T));

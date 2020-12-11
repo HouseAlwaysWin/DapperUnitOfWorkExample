@@ -1,7 +1,7 @@
 using Dapper.Contrib.Extensions;
 using DapperUnitOfWorkLib.Extensions;
 
-namespace DapperUnitOfWorkLib.Entities
+namespace DapperUnitOfWork.Repo.Entities
 {
     [Table ("Product")]
     public class Product

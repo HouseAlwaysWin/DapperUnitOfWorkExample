@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Dapper.Contrib.Extensions;
 using DapperUnitOfWorkLib.Extensions;
@@ -7,6 +8,11 @@ using DapperUnitOfWorkLib.Interface;
 namespace DapperUnitOfWorkLib.Repositories
 {
 
+
+    /// <summary>
+    /// Generic GenerictRepository
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         private IUnitOfWork _uow;
@@ -73,6 +79,11 @@ namespace DapperUnitOfWorkLib.Repositories
         public async Task DeleteAll()
         {
             await _uow.Connection.DeleteAllAsync<T>(_uow.Transaction);
+        }
+
+        public void BulkInsert(IEnumerable<T> model,int batchSize,int timeout)
+        {
+            _uow.Connection.BulkInsert<T>(model,_uow.Transaction,batchSize,timeout);
         }
     }
 }

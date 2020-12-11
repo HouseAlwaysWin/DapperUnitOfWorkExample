@@ -1,24 +1,19 @@
 using System.Collections.Generic;
 using System.Data;
-using Dapper;
-using DapperUnitOfWorkLib.Entities;
 using DapperUnitOfWorkLib.Interface;
-using DapperUnitOfWorkLib.Interfaces;
+using DapperUnitOfWorkLib.Repositories;
+using DapperUnitOfWork.Repo.Entities;
+using Dapper;
+using System.Data.SqlClient;
 
-namespace DapperUnitOfWorkLib.Repositories
+namespace DapperUnitOfWork.Repo
 {
-    
 
-    public  class ProductRepository : GenericRepository<Product>, IProductRepository{
+    public class ProductRepository : ProductRepository<SqlConnection>
+    {
         public ProductRepository(IUnitOfWork uow) : base(uow)
         {
         }
-
-        public IEnumerable<Product> GetProducts(int num = 1000)
-        {
-            throw new System.NotImplementedException();
-        }
-
     }
 
     public class ProductRepository<DbType> : GenericRepository<Product>, IProductRepository where DbType : IDbConnection, new()

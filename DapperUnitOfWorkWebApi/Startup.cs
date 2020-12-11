@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Data.SqlClient;
-using DapperUnitOfWorkLib.Interfaces;
+using DapperUnitOfWork.Repo;
 
 namespace DapperUnitOfWorkWebApi
 {
