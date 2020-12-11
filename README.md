@@ -4,7 +4,7 @@
 
 This is just a Example for Repository and Unit Of Work pattern with Dapper.
 
-And it's build up with .Net Core 3.1 And .net standard 2.1
+And it build up with .Net Core 3.1 And .net standard 2.1
 
 ## How to use it
 
@@ -59,8 +59,9 @@ if you don't want to run web api with docker you can just stop it from docker an
 ```
 press F5 under the vscode to run by yourslef for testing it
 
-Or you just want to debug under the docker then you can just use attach to check it:
-modified launch.json:
+Or you just want to debug under the docker then you can just use attach to dll
+
+just modified launch.json:
 
 ```json
  {
