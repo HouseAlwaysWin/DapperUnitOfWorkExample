@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Dapper.Contrib.Extensions;
 using DapperUnitOfWorkLib.Interface;
 using DapperUnitOfWorkLib.Repositories;
 using Xunit;
@@ -7,7 +8,25 @@ using Xunit;
 namespace DapperUnitOfWorkTest
 {
 
+    public class TestsFixture : IDisposable
+    {
+        public IUnitOfWork sqlserverUow;
+        public ITestRepository sqlserverTestRepository;
+        public TestsFixture()
+        {
+           sqlserverUow = new UnitOfWork("Server=localhost,1500;Database=DapperUnitOfWorkDB;user id=SA;password=Your_password123;Integrated Security=false");  
+           sqlserverTestRepository = new TestRepository(sqlserverUow);
+        }
+
+        public void Dispose()
+        {
+            sqlserverTestRepository.DeleteAll();
+        }
+    }
+
+    [Table("Test")]
     public class Test{
+        [Key]
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
@@ -25,25 +44,32 @@ namespace DapperUnitOfWorkTest
         }
     }
 
-    public class GenericRepositoryTest 
+    public class GenericRepositoryTest :IClassFixture<TestsFixture>
     {
-        IUnitOfWork sqlserverUow;
-        ITestRepository testRepository;
-        public GenericRepositoryTest()
+        TestsFixture testsFixture;
+        public GenericRepositoryTest(TestsFixture testsFixture)
         {
-            sqlserverUow = new UnitOfWork("Server=localhost,1500;Database=DapperUnitOfWorkDB;user id=SA;password=Your_password123;Integrated Security=false"); 
+            this.testsFixture = testsFixture;
         }
         
 
         [Fact]
         public void CanInsertDataToTest()
         {
-            testRepository = new TestRepository(sqlserverUow);
-            sqlserverUow.BeginTrans();
-            testRepository.Insert(new Test{
+            testsFixture.sqlserverUow.BeginTrans();
+            Test test = new Test{
+                Name = "test",
+                Description = "test description",
+                Price = 100
+            };
+            testsFixture.sqlserverTestRepository.Insert(test);
+            var returnTest = testsFixture.sqlserverTestRepository.Get(test.Id);
+            testsFixture.sqlserverUow.Commit();
 
-            });
-            sqlserverUow.Commit();
+            Assert.Equal("test",returnTest.Name);
+            Assert.Equal("test description",returnTest.Description);
+            Assert.Equal(100,returnTest.Price);
+
         }
     }
 }
