@@ -95,7 +95,6 @@ namespace DapperUnitOfWorkTest
             Assert.Equal("test5",returnResult[4].Name);
             Assert.Equal("description4",returnResult[3].Description);
             Assert.Equal(4,returnResult[4].Price);
-
         }
     }
 }
