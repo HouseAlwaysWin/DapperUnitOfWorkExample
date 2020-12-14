@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections.Generic;
 using Dapper.Contrib.Extensions;
@@ -69,6 +70,31 @@ namespace DapperUnitOfWorkTest
             Assert.Equal("test",returnTest.Name);
             Assert.Equal("test description",returnTest.Description);
             Assert.Equal(100,returnTest.Price);
+
+        }
+
+
+        [Fact]
+        public void CanGetPaginationTest(){
+            testsFixture.sqlserverUow.BeginTrans();
+            List<Test> testList = new List<Test>();
+            for (int i = 0; i < 100; i++)
+            {
+               testList.Add(new Test{
+                   Name= $"test{i}",
+                   Description = $"description{i}",
+                   Price = i
+               });
+            }
+            
+            int total = 0;
+             var returnResult=testsFixture.sqlserverTestRepository.GetPaginated(ref total,1,10).ToList();
+            testsFixture.sqlserverUow.Commit();
+
+            Assert.Equal(100,total);
+            Assert.Equal("test5",returnResult[4].Name);
+            Assert.Equal("description4",returnResult[3].Description);
+            Assert.Equal(4,returnResult[4].Price);
 
         }
     }

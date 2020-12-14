@@ -22,14 +22,9 @@ namespace DapperUnitOfWorkConsole
 
             uow.BeginTrans();
             List<Product> productList = new List<Product>();
-            for (int i = 0; i < 100; i++)
+                        for (int i = 0; i < 100; i++)
             {
-            //   product = new Product{
-            //        Id=i,
-            //        Name = $"test{i}"
-            //   };   
-            //   productRepo.Insert(product);
-              productList.Add(new Product{
+             productList.Add(new Product{
                   Name = $"desc{i}",
                   Description=$"name{i}",
                   Price = i
@@ -38,12 +33,20 @@ namespace DapperUnitOfWorkConsole
 
             // int total = 0;
             // var products = productRepo.GetPaginated(ref total,1,10);
-
-            // await productRepo.InsertAsync(product);
-            
+                          
 
             // var productsAsync = await productRepo.GetPaginatedAsync(1,10);
             productRepo.BulkInsert(productList);
+            uow.Commit();
+
+            uow.BeginTrans();
+            var product = new Product{
+                   Name = $"test",
+                   Description = "test",
+                   Price = 0
+              };   
+              productRepo.Insert(product);
+ 
 
             uow.Commit();
         }
