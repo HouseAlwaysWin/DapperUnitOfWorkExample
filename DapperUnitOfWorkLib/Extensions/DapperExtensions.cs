@@ -18,7 +18,7 @@ namespace DapperUnitOfWorkLib.Extensions {
     /// </summary>
     public static class DapperExtensions {
 
-        private static readonly Dictionary<string, IDatabaseAdapter> CmdDict = new Dictionary<string, IDatabaseAdapter> {
+        private static readonly Dictionary<string, IDatabaseAdapter> DatabaseAdapter = new Dictionary<string, IDatabaseAdapter> {
             ["sqlconnection"] = new SqlServerAdapter (),
             ["npgsqlconnection"] = new PostgresAdapter (),
             ["mysqlconnection"] = new MySqlAdapter (),
@@ -39,6 +39,7 @@ namespace DapperUnitOfWorkLib.Extensions {
         private interface IDatabaseAdapter {
             string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc);
             void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data,IDbTransaction transaction=null, int batchSize = 0, int bulkCopyTimeout = 30);
+            Task BulkInsertAsync<T>(IDbConnection connection,IEnumerable<T> data,IDbTransaction transaction=null, int batchSize = 0, int bulkCopyTimeout = 30);
         }
 
         private class SqlServerAdapter : IDatabaseAdapter {
@@ -57,6 +58,21 @@ namespace DapperUnitOfWorkLib.Extensions {
                 }
             }
 
+            public async Task BulkInsertAsync<T>(IDbConnection connection, IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
+            {
+                var type = typeof (T);
+                var tableName = GetTableName(type);
+                DataTable dataTables = data.ToDataTable();
+                using (var bulkCopy = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.Default, (SqlTransaction)transaction))
+                {
+                    bulkCopy.BulkCopyTimeout = bulkCopyTimeout;
+                    bulkCopy.BatchSize = batchSize;
+                    bulkCopy.DestinationTableName = tableName;
+                    bulkCopy.ToColumnMapping<T>();
+                    await bulkCopy.WriteToServerAsync(dataTables);
+                }
+            }
+
             public string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc) {
                 string desc = isDesc ? "DESC" : "ASC";
                 int totalItems = (currentPage - 1) * itemsPerPage;
@@ -69,6 +85,11 @@ namespace DapperUnitOfWorkLib.Extensions {
                 throw new NotSupportedException();
             }
 
+            public Task BulkInsertAsync<T>(IDbConnection connection, IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
+            {
+                throw new NotImplementedException();
+            }
+
             public string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc) {
                 string desc = isDesc ? "DESC" : "ASC";
                 int totalItems = (currentPage - 1) * itemsPerPage;
@@ -79,6 +100,11 @@ namespace DapperUnitOfWorkLib.Extensions {
             public void BulkInsert<T>(IDbConnection connection,IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
             {
                 throw new NotSupportedException();
+            }
+
+            public Task BulkInsertAsync<T>(IDbConnection connection, IEnumerable<T> data, IDbTransaction transaction = null, int batchSize = 0, int bulkCopyTimeout = 30)
+            {
+                throw new NotImplementedException();
             }
 
             public string GetPaginated (string tableName, string orderBy, int currentPage, int itemsPerPage, bool isDesc) {
@@ -95,7 +121,7 @@ namespace DapperUnitOfWorkLib.Extensions {
             var name = GetDatabaseType?.Invoke (connection).ToLower () ??
                 connection.GetType ().Name.ToLower ();
 
-            return CmdDict.TryGetValue (name, out var cmd) ? cmd : DefaultDB;
+            return DatabaseAdapter.TryGetValue (name, out var cmd) ? cmd : DefaultDB;
         }
 
         private static bool IsWriteable (PropertyInfo pi) {
