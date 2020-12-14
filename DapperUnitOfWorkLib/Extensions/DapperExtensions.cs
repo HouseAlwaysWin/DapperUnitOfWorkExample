@@ -426,6 +426,20 @@ namespace DapperUnitOfWorkLib.Extensions {
             var dbType = GetDatabaseConnType(connection);
             dbType.BulkInsert<T>(connection,data,transaction,batchSize,bulkCopyTimeout);
         }
+
+         /// <summary>
+        /// Async Bulk Insert 
+        /// </summary>
+        /// <param name="connection">Open SqlConnection</param>
+        /// <param name="data">Insert data</param>
+        /// <param name="transaction">The transaction to run under, null (the default) if none</param>
+        /// <param name="batchSize">number of once bulk insert </param>
+        /// <param name="bulkCopyTimeout">time out</param>
+        /// <typeparam name="T"></typeparam>
+        public static async Task BulkInsertAsync<T>(this IDbConnection connection,IEnumerable<T> data,IDbTransaction transaction=null, int batchSize = 0, int bulkCopyTimeout = 30){
+            var dbType = GetDatabaseConnType(connection);
+            await dbType.BulkInsertAsync<T>(connection,data,transaction,batchSize,bulkCopyTimeout);
+        }
    
     }
 }

@@ -85,5 +85,10 @@ namespace DapperUnitOfWorkLib.Repositories
         {
             _uow.Connection.BulkInsert<T>(model,_uow.Transaction,batchSize,timeout);
         }
+
+        public async Task BulkInsertAsync(IEnumerable<T> model, int batchSize = 0, int timeout = 30)
+        {
+            await _uow.Connection.BulkInsertAsync<T>(model,_uow.Transaction,batchSize,timeout);
+        }
     }
 }
