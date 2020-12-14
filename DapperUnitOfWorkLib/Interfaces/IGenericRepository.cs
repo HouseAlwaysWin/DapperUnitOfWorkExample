@@ -15,7 +15,7 @@ namespace DapperUnitOfWorkLib.Interface
         Task<T> GetTaskAsync(object id);
         void Insert(T model);
         Task InsertAsync(T model);
-        void BulkInsert(IEnumerable<T> model,int batchSize,int timeout);
+        void BulkInsert(IEnumerable<T> model,int batchSize=0 ,int timeout=30);
         void Update(T model);
         Task UpdateAsync(T model);
 

@@ -46,12 +46,14 @@ namespace DapperUnitOfWorkLib.Extensions {
             {
                 var type = typeof (T);
                 var tableName = GetTableName(type);
+                DataTable dataTables = data.ToDataTable();
                 using (var bulkCopy = new SqlBulkCopy((SqlConnection)connection, SqlBulkCopyOptions.Default, (SqlTransaction)transaction))
                 {
                     bulkCopy.BulkCopyTimeout = bulkCopyTimeout;
                     bulkCopy.BatchSize = batchSize;
                     bulkCopy.DestinationTableName = tableName;
-                    bulkCopy.WriteToServer(ToDataTable<T>(data));
+                    bulkCopy.ToColumnMapping<T>();
+                    bulkCopy.WriteToServer(dataTables);
                 }
             }
 
@@ -231,24 +233,33 @@ namespace DapperUnitOfWorkLib.Extensions {
             PropertyDescriptorCollection properties =
                 TypeDescriptor.GetProperties(typeof(T));
             DataTable table = new DataTable();
-            foreach (PropertyDescriptor prop in properties){
-                var attr = prop.Attributes.OfType<ColumnAttribute>().FirstOrDefault();
-                // check if property has columnName attribute then replace the name
-                string columnName = (attr!=null)? attr.Name:prop.Name;
-                table.Columns.Add(columnName, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
-            }
+            foreach (PropertyDescriptor prop in properties)
+                table.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
             foreach (T item in data)
             {
                 DataRow row = table.NewRow();
-                foreach (PropertyDescriptor prop in properties){
-                    var attr = prop.Attributes.OfType<ColumnAttribute>().FirstOrDefault();
-                    // check if property has columnName attribute then replace the name
-                    string columnName = (attr!=null)? attr.Name:prop.Name;
-                    row[columnName] = prop.GetValue(item) ?? DBNull.Value;
-                }
+                foreach (PropertyDescriptor prop in properties)
+                    row[prop.Name] = prop.GetValue(item) ?? DBNull.Value;
                 table.Rows.Add(row);
             }
             return table;
+        }
+
+
+
+        /// <summary>
+        /// For bulk insert property's name mapping
+        /// </summary>
+        /// <param name="bulkCopy"></param>
+        /// <typeparam name="T"></typeparam>
+        private static void ToColumnMapping<T>(this SqlBulkCopy bulkCopy){
+            PropertyDescriptorCollection properties =
+            TypeDescriptor.GetProperties(typeof(T));
+            foreach (PropertyDescriptor prop in properties){
+                var attr = prop.Attributes.OfType<ColumnAttribute>().FirstOrDefault();
+                string columnName = (attr!=null)? attr.Name:prop.Name;
+                bulkCopy.ColumnMappings.Add(prop.Name,columnName);
+            }
         }
 
         /// <summary>

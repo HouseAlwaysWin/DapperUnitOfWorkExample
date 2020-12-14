@@ -81,7 +81,7 @@ namespace DapperUnitOfWorkLib.Repositories
             await _uow.Connection.DeleteAllAsync<T>(_uow.Transaction);
         }
 
-        public void BulkInsert(IEnumerable<T> model,int batchSize,int timeout)
+        public void BulkInsert(IEnumerable<T> model,int batchSize=0,int timeout=30)
         {
             _uow.Connection.BulkInsert<T>(model,_uow.Transaction,batchSize,timeout);
         }

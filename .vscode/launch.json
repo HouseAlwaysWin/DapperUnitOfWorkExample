@@ -17,42 +17,42 @@
             "stopAtEntry": false
         },
         // for web api
-        {
-            "name": ".NET Core Launch (web)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            "program": "${workspaceFolder}/DapperUnitOfWorkWebApi/bin/Debug/netcoreapp3.1/DapperUnitOfWorkWebApi.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/DapperUnitOfWorkWebApi",
-            "stopAtEntry": false,
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            },
-            "sourceFileMap": {
-                "/Views": "${workspaceFolder}/Views"
-            }
-        },
-        // Attach for Docker Dll, run and select path: API/bin/Debug/netcoreapp3.1/DapperUnitOfWorkWebApi.dll
-        {
-            "name": ".NET Core SSH Attach",
-            "type": "coreclr",
-            "request": "attach",
-            "processId": "${command:pickRemoteProcess}",
-            "pipeTransport": {
-                "pipeProgram": "docker",
-                "pipeArgs": [
-                    "exec",
-                    "-i",
-                    "webapi"
-                ],
-                "debuggerPath": "/root/vsdbg/vsdbg",
-                "pipeCwd": "${workspaceRoot}",
-                "quoteArgs": false
-            },
-            "sourceFileMap": {
-                "/app": "${workspaceRoot}"
-            },
-        }
+        // {
+        //     "name": ".NET Core Launch (web)",
+        //     "type": "coreclr",
+        //     "request": "launch",
+        //     "preLaunchTask": "build",
+        //     "program": "${workspaceFolder}/DapperUnitOfWorkWebApi/bin/Debug/netcoreapp3.1/DapperUnitOfWorkWebApi.dll",
+        //     "args": [],
+        //     "cwd": "${workspaceFolder}/DapperUnitOfWorkWebApi",
+        //     "stopAtEntry": false,
+        //     "env": {
+        //         "ASPNETCORE_ENVIRONMENT": "Development"
+        //     },
+        //     "sourceFileMap": {
+        //         "/Views": "${workspaceFolder}/Views"
+        //     }
+        // },
+        // // Attach for Docker Dll, run and select path: API/bin/Debug/netcoreapp3.1/DapperUnitOfWorkWebApi.dll
+        // {
+        //     "name": ".NET Core SSH Attach",
+        //     "type": "coreclr",
+        //     "request": "attach",
+        //     "processId": "${command:pickRemoteProcess}",
+        //     "pipeTransport": {
+        //         "pipeProgram": "docker",
+        //         "pipeArgs": [
+        //             "exec",
+        //             "-i",
+        //             "webapi"
+        //         ],
+        //         "debuggerPath": "/root/vsdbg/vsdbg",
+        //         "pipeCwd": "${workspaceRoot}",
+        //         "quoteArgs": false
+        //     },
+        //     "sourceFileMap": {
+        //         "/app": "${workspaceRoot}"
+        //     },
+        // }
     ]
 }

@@ -4,6 +4,8 @@ USE DapperUnitOfWorkDB
 CREATE TABLE Product
 (
     Id INT PRIMARY KEY IDENTITY(1,1),
-    Name VARCHAR(50) NOT NULL
+    Name VARCHAR(50) NOT NULL,
+    Description VARCHAR (Max) NOT NULL,
+    Price INT NOT NULL
 )
 GO
