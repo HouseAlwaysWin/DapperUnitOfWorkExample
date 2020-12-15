@@ -304,10 +304,16 @@ namespace DapperUnitOfWorkLib.Extensions {
             var countCache = nameof (GetPaginated);
 
             if (!GetQueries.TryGetValue (cacheName, out string sql)) {
-                GetSingleKey<T> (nameof (GetPaginated));
+                var key = GetSingleKey<T> (nameof (GetPaginated));
                 var name = GetTableName (type);
                 var orderByProp = OrderByPropertiesCache (type).FirstOrDefault ();
-                var isDesc = IsOrderByDesc (orderByProp);
+                bool isDesc = false;
+                if(orderByProp==null){
+                    orderByProp = key;
+                }
+                else {
+                    isDesc = IsOrderByDesc (orderByProp);
+                }
 
                 sql = GetDatabaseConnType (connection).GetPaginated (name, orderByProp.Name, currentPage, itemsPerPage, isDesc);
                 GetQueries[cacheName] = sql;
@@ -316,8 +322,6 @@ namespace DapperUnitOfWorkLib.Extensions {
             if (!GetQueries.TryGetValue (countCache, out string sqlTotal)) {
                 GetSingleKey<T> (nameof (GetPaginated));
                 var name = GetTableName (type);
-                var orderByProp = OrderByPropertiesCache (type).FirstOrDefault ();
-                var isDesc = IsOrderByDesc (orderByProp);
 
                 sqlTotal = "SELECT COUNT(*) FROM " + name;
                 GetQueries[countCache] = sqlTotal;
@@ -366,10 +370,17 @@ namespace DapperUnitOfWorkLib.Extensions {
             var countCache = nameof (GetPaginated);
 
             if (!GetQueries.TryGetValue (cacheName, out string sql)) {
-                GetSingleKey<T> (nameof (GetPaginated));
+               var key = GetSingleKey<T> (nameof (GetPaginated));
                 var name = GetTableName (type);
                 var orderByProp = OrderByPropertiesCache (type).FirstOrDefault ();
-                var isDesc = IsOrderByDesc (orderByProp);
+                bool isDesc = false;
+                if(orderByProp==null){
+                    orderByProp = key;
+                }
+                else {
+                    isDesc = IsOrderByDesc (orderByProp);
+                }
+
 
                 sql = GetDatabaseConnType (connection).GetPaginated (name, orderByProp.Name, currentPage, itemsPerPage, isDesc);
                 GetQueries[cacheName] = sql;
@@ -378,9 +389,6 @@ namespace DapperUnitOfWorkLib.Extensions {
             if (!GetQueries.TryGetValue (countCache, out string sqlTotal)) {
                 GetSingleKey<T> (nameof (GetPaginated));
                 var name = GetTableName (type);
-                var orderByProp = OrderByPropertiesCache (type).FirstOrDefault ();
-                var isDesc = IsOrderByDesc (orderByProp);
-
                 sqlTotal = "SELECT COUNT(*) FROM " + name;
                 GetQueries[countCache] = sqlTotal;
             }
