@@ -71,12 +71,17 @@ namespace DapperUnitOfWorkLib.Repositories
             _uow.Connection.Delete<T>(model, _uow.Transaction);
         }
 
+        public void  DeleteAll()
+        {
+             _uow.Connection.DeleteAll<T>(_uow.Transaction);
+        }
+
         public async Task DeleteAsync(T model)
         {
             await _uow.Connection.DeleteAsync<T>(model, _uow.Transaction);
         }
 
-        public async Task DeleteAll()
+        public async Task DeleteAllAsync()
         {
             await _uow.Connection.DeleteAllAsync<T>(_uow.Transaction);
         }

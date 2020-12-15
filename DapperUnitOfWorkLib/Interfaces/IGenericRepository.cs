@@ -6,8 +6,9 @@ namespace DapperUnitOfWorkLib.Interface
     public interface IGenericRepository<T> where T : class
     {
         void Delete(T model);
-        Task DeleteAll();
         Task DeleteAsync(T model);
+        void DeleteAll();
+        Task DeleteAllAsync();
         T Get(object id);
         IEnumerable<T> GetAll();
         IEnumerable<T> GetPaginated(ref int total, int currentPage, int itemsPerPage);
